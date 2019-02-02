@@ -10,11 +10,13 @@
 Module.register("MMM-iFrame",{
 		// Default module config.
 		defaults: {
-                                frameWidth: "300",
+				height:"300px",
 				width:"100%",
                                 updateInterval: 0.5 * 60 * 1000,
                                 url: ["http://magicmirror.builders/"],
-                                scrolling: "no"
+                                scrolling: "no",
+                                camAddress:{},
+
 		},
 
         start: function () {
@@ -34,34 +36,53 @@ resume: function() {
    console.log("Resuming");
    return this.getDom();
 },
-        getStyles: function() {
-                return [
-                        "MMM-iFrame.css",
-                ];
-        },
 
         // Override dom generator.
 	getDom: function() {
-                var { width, height } = this.config;
-                var wrapper = document.createElement("div");
+		var iframe = document.createElement("IFRAME");
+		iframe.style = "border:0"
+		iframe.width = this.config.width;
+		iframe.height = this.config.height;
+                iframe.scrolling = this.config.scrolling;
+                var url_index = 0;
+         //       console.log("currentURL:" + this.currentURL);
+                var repeat = true;
+                while(repeat) {
+                    url_index = this.getRandomInt(0,this.config.url.length);
+                    futureURL = this.config.url[url_index];
+                    console.log("URL_length:" + this.config.url.length + " " + "URL_index:" + url_index + " " + "url:" + futureURL);
+           //         if( futureURL == currentURL) {
+                        iframe.src = futureURL;
+             //           currentURL = futureURL;
+                        repeat = false;
+               //     } 
+                }
+		return iframe;
+        },
+
+             
+        notificationReceived: function(notification, payload, sender) {
+
+                if (notification === 'SHOW_CAM')
+                {       
+                        var urlArray=[];          
+                        Log.log('Notification Received from ' + sender.name + ' containing payload : '+ payload.pay );
+                        payload.pay=payload.pay.toLowerCase();
+                        
+                        if(payload.pay in this.config.camAddress)
+                        {
+                        urlArray.push(this.config.camAddress[payload.pay]);
+                        this.config.url=urlArray;
+                        this.updateDom();
+                        }
+                        
+
+                }
+                if ( notification === 'DOM_OBJECTS_CREATED') {
+                        //now the Dom is ready; you can call hide() or show().
+                        //    this.hide(0);
+                        }           
+                },
                 
-                wrapper.className = "mmm-iframe"
-                wrapper.style.width = `${this.config.frameWidth}px`;
-
-                var html = `
-                        <div class="mmm-iframe-wrapper" style="padding-top: ${100 / (width / height)}%;">
-                                <iframe
-                                        src="${this.config.url[this.getRandomInt(0, this.config.url.length)]}"
-                                        width="${width}"
-                                        height="${height}"
-                                        scrolling="${this.config.scrolling}"
-                                ></iframe>
-                        </div>
-                `;
-
-                wrapper.insertAdjacentHTML("afterbegin", html);
-
-		return wrapper;
-	}
 
 });
